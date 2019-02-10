@@ -1,6 +1,6 @@
 # Ansible modules for Samson
 
-[![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
+![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
 
 This role contains modules to simplify working with
 [Samson](https://github.com/zendesk/samson).
@@ -9,6 +9,12 @@ It supports:
 
 - projects
 - stages
+- commands
+
+### Installation
+```
+ansible-galaxy install danihodovic.samson
+```
 
 ### Example Playbook
 
