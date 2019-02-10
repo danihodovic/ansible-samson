@@ -13,24 +13,41 @@ It supports:
 ### Example Playbook
 
 ```yml
+---
 - name: Samson
   hosts: localhost
-    - name: Create a project
+  roles:
+    - danihodovic.samson
+  vars:
+    samson_url: https://samson.mycompany.org
+    # Hide this in the Ansible vault or pass it through the environment instead
+    # of checking it in as plaintext
+    samson_token: 967c19e2e223682d232935661f0675b0ddd4930f9e77ce32cad51bc65b24bbbc
+  tasks:
+    - name: Create dotfiles project
+      register: project
       samson_project:
-        url: https://samson.myorg.com
-        token: '{{ samson_oauth_token }}'
+        url: '{{ samson_url }}'
+        token: '{{ samson_token }}'
         permalink: dotfiles
         name: dotfiles
         repository_url: https://github.com/danihodovic/.dotfiles
 
-    - name: Delete a project
-      samson_project:
-        state: absent
-        url: https://samson.myorg.com
-        token: '{{ samson_oauth_token }}'
-        permalink: dotfiles
-        name: dotfiles
-        repository_url: https://github.com/danihodovic/.dotfiles
+    - name: Create staging
+      samson_stage:
+        url: '{{ samson_url }}'
+        token: '{{ samson_token }}'
+        name: staging
+        permalink: staging
+        project_permalink: '{{ project.project.permalink }}'
+
+    - name: Create deployment command
+      samson_command:
+        url: '{{ samson_url }}'
+        token: '{{ samson_token }}'
+        project_id: '{{ project.project.id }}'
+        command: |
+          echo "deploying my project!"
 ```
 
 License
