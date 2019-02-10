@@ -22,6 +22,8 @@ provisioner:
   name: ansible
   lint:
     name: ansible-lint
+    options:
+      x: [ANSIBLE0011]
   playbooks:
     converge: ./converge.yml
     prepare: ../shared/prepare.yml
