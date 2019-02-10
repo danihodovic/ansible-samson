@@ -140,7 +140,6 @@ def upsert(module, http_client, base_url, ansible_params):
 
 
 def delete(module, http_client, base_url, stage):
-    print("deleting")
     try:
         http_client.delete(
             stage_url(base_url, stage["permalink"]), follow_redirects="yes"

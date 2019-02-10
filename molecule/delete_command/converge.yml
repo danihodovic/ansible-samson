@@ -1,0 +1,35 @@
+---
+- name: Delete stage tests
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random command to make every run unique
+      set_fact:
+        cmd: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a command
+      samson_command: &params
+        url: http://localhost:9080
+        token: token
+        command: '{{ cmd }}'
+
+    - name: Delete a command
+      register: delete_command
+      samson_command:
+        <<: *params
+        state: absent
+
+    - name: Assert that the changed is true
+      assert:
+        that:
+          - delete_command.changed == true
+
+    - name: Delete a command with the same params
+      register: delete_command_2
+      samson_command:
+        <<: *params
+        state: absent
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - delete_command_2.changed == false
