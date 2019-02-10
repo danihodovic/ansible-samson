@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  role_name: samson
   author: Dani Hodovic
   description: Ansible modules for Samson deployment UI
   company: HoneyLogic OU
