@@ -5,9 +5,23 @@ __metaclass__ = type
 import json
 import re
 import sys
+import os
+from os.path import dirname, abspath, join
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import Request
+
+# Handle running in debug mode as we can't import from module_utils if we're
+# running outside of Ansible, e.g:
+# cat stage_args.json | ENV=dev python2 library/samson_stage.py
+if os.environ.get("ENV") == "dev":
+    module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
+    sys.path.append(module_utils_path)
+    # pylint: disable=E0611,E0401
+    from samson_utils import entity_url
+else:
+    # pylint: disable=E0611,E0401
+    from ansible.module_utils.samson_utils import entity_url
 
 if sys.version_info.major == 3:
     # pylint: disable=E0611,E0401
@@ -20,30 +34,8 @@ else:
 VALID_PERMALINK_REGEX = "^[A-Za-z0-9-]+$"
 
 
-def strip_disallowed_props(stage):
-    new_project = dict()
-    disallowed_props = (
-        "id",
-        "created_at",
-        "updated_at",
-        "deleted_at",
-        "order",
-        "template_stage_id",
-        "project_id",
-        "average_deploy_time",
-    )
-    for key in stage:
-        if key not in disallowed_props:
-            new_project[key] = stage[key]
-    return new_project
-
-
-def stage_url(base_url, permalink=""):
-    parts = [base_url]
-    if permalink:
-        parts.append(permalink)
-
-    return "{}.json".format("/".join(parts))
+def strip_none_props(d):
+    return {k: v for k, v in d.items() if v is not None}
 
 
 def extract_html_error(html):
@@ -60,9 +52,10 @@ def extract_html_error(html):
 
 def create(module, http_client, base_url, ansible_params):
     try:
-        url = stage_url(base_url)
+        url = entity_url(base_url)
         url = url.replace(".json", "")
-        res = http_client.post(url, data=json.dumps(ansible_params))
+        stage = strip_none_props(ansible_params)
+        res = http_client.post(url, data=json.dumps(stage))
 
         html = res.read()
         m = re.search("There was an error", html)
@@ -74,14 +67,14 @@ def create(module, http_client, base_url, ansible_params):
         # another request to rename the permalink to the one that was provided.
         # This allows users to change the project name in the web UI without
         # breaking Ansible since permalink becomes the de-facto identifier.
-        url = stage_url(base_url, ansible_params["name"])
+        url = entity_url(base_url, ansible_params["name"])
         res = http_client.patch(
             url,
             data=json.dumps({"permalink": ansible_params["permalink"]}),
             follow_redirects="yes",
         )
 
-        url = stage_url(base_url, ansible_params["permalink"])
+        url = entity_url(base_url, ansible_params["permalink"])
         res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
@@ -93,18 +86,14 @@ def create(module, http_client, base_url, ansible_params):
 
 
 def update(module, http_client, base_url, stage, ansible_params):
-    updated_stage = stage.copy()
-    updated_stage.update(ansible_params)
-    updated_stage = strip_disallowed_props(updated_stage)
-    stage = strip_disallowed_props(stage)
-
-    if stage == updated_stage:
-        module.exit_json(changed=False, stage=stage)
+    ansible_params = strip_none_props(ansible_params)
 
     try:
-        url = stage_url(base_url, ansible_params["permalink"])
+        url = entity_url(
+            base_url, identifier=ansible_params["permalink"], json_suffix=False
+        )
         res = http_client.patch(
-            url, data=json.dumps(updated_stage), follow_redirects="yes"
+            url, data=json.dumps(dict(stage=ansible_params)), follow_redirects="yes"
         )
 
         html = res.read()
@@ -114,7 +103,7 @@ def update(module, http_client, base_url, stage, ansible_params):
             msg = extract_html_error(html)
             module.fail_json(msg=msg)
 
-        url = stage_url(base_url, ansible_params["permalink"])
+        url = entity_url(base_url, ansible_params["permalink"])
         res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
@@ -128,7 +117,7 @@ def update(module, http_client, base_url, stage, ansible_params):
 
 def upsert(module, http_client, base_url, ansible_params):
     try:
-        url = stage_url(base_url, ansible_params["permalink"])
+        url = entity_url(base_url, ansible_params["permalink"])
         res = http_client.get(url)
         stage = json.load(res)["stage"]
         update(module, http_client, base_url, stage, ansible_params)
@@ -142,7 +131,7 @@ def upsert(module, http_client, base_url, ansible_params):
 def delete(module, http_client, base_url, stage):
     try:
         http_client.delete(
-            stage_url(base_url, stage["permalink"]), follow_redirects="yes"
+            entity_url(base_url, stage["permalink"]), follow_redirects="yes"
         )
         module.exit_json(changed=True)
     except HTTPError as err:
@@ -164,43 +153,40 @@ def main():
         # Required params
         project_permalink=dict(required=True, type="str"),
         permalink=dict(required=True, type="str"),
-        # Required for state=present
         name=dict(type="str"),
-        # Optional params
-        allow_redeploy_previous_when_failed=dict(type="bool", default=False),
-        aws_sts_iam_role_arn=dict(type="str", default=""),
-        #  aws_sts_iam_role_session_duration": null,
-        block_on_gcr_vulnerabilities=dict(type="bool", default=False),
-        builds_in_environment=dict(type="bool", default=False),
-        cancel_queued_deploys=dict(type="bool", default=False),
-        comment_on_zendesk_tickets=dict(type="bool", default=False),
-        confirm=dict(type="bool", default=True),
-        dashboard=dict(type="str", default=""),
-        datadog_monitor_ids=dict(type="str", default=""),
-        datadog_tags=dict(type="str", default=""),
-        default_reference=dict(type="str", default=""),
-        deploy_on_release=dict(type="bool", default=False),
-        email_committers_on_automated_deploy_failure=dict(type="bool", default=False),
-        full_checkout=dict(type="bool", default=False),
-        is_template=dict(type="bool", default=False),
-        jenkins_build_params=dict(type="bool", default=False),
-        jenkins_email_committers=dict(type="bool", default=False),
-        jenkins_job_names=dict(type="str", default=""),
-        kubernetes=dict(type="bool", default=False),
-        next_stage_ids=dict(type="list", default=[]),
-        no_code_deployed=dict(type="bool", default=False),
-        no_reference_selection=dict(type="bool", default=False),
-        notify_airbrake=dict(type="bool", default=False),
-        notify_assertible=dict(type="bool", default=False),
-        notify_email_address=dict(type="str", default=""),
-        periodical_deploy=dict(type="bool", default=False),
-        prerequisite_stage_ids=dict(type="list", default=[]),
-        production=dict(type="bool", default=False),
-        run_in_parallel=dict(type="bool", default=False),
-        static_emails_on_automated_deploy_failure=dict(type="str", default=""),
-        #  template_stage_id": null,
-        update_github_pull_requests=dict(type="bool", default=False),
-        use_github_deployment_api=dict(type="bool", default=False),
+        command_ids=dict(type="list"),
+        deploy_group_ids=dict(type="list"),
+        allow_redeploy_previous_when_failed=dict(type="bool"),
+        aws_sts_iam_role_arn=dict(type="str"),
+        block_on_gcr_vulnerabilities=dict(type="bool"),
+        builds_in_environment=dict(type="bool"),
+        cancel_queued_deploys=dict(type="bool"),
+        comment_on_zendesk_tickets=dict(type="bool"),
+        confirm=dict(type="bool"),
+        dashboard=dict(type="str"),
+        datadog_tags=dict(type="str"),
+        default_reference=dict(type="str"),
+        deploy_on_release=dict(type="bool"),
+        email_committers_on_automated_deploy_failure=dict(type="bool"),
+        full_checkout=dict(type="bool"),
+        is_template=dict(type="bool"),
+        jenkins_build_params=dict(type="bool"),
+        jenkins_email_committers=dict(type="bool"),
+        jenkins_job_names=dict(type="str"),
+        kubernetes=dict(type="bool"),
+        next_stage_ids=dict(type="list"),
+        no_code_deployed=dict(type="bool"),
+        no_reference_selection=dict(type="bool"),
+        notify_airbrake=dict(type="bool"),
+        notify_assertible=dict(type="bool"),
+        notify_email_address=dict(type="str"),
+        periodical_deploy=dict(type="bool"),
+        prerequisite_stage_ids=dict(type="list"),
+        production=dict(type="bool"),
+        run_in_parallel=dict(type="bool"),
+        static_emails_on_automated_deploy_failure=dict(type="str"),
+        update_github_pull_requests=dict(type="bool"),
+        use_github_deployment_api=dict(type="bool"),
     )
 
     module = AnsibleModule(
@@ -213,13 +199,14 @@ def main():
 
     state = module.params["state"]
     stage = module.params.copy()
-    base_url = "/".join(
-        [module.params["url"], "projects", module.params["project_permalink"], "stages"]
-    )
     del stage["url"]
     del stage["state"]
     del stage["token"]
     del stage["project_permalink"]
+
+    base_url = "/".join(
+        [module.params["url"], "projects", module.params["project_permalink"], "stages"]
+    )
 
     http_client = Request(
         headers={

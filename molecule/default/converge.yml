@@ -1,5 +1,5 @@
 ---
-- name: Create / update / delete Samson project
+- name: Default
   hosts: molecule-samson
   tasks:
     - name: Create a random permalink to not clash with other tests
@@ -7,7 +7,7 @@
         permalink: '{{ 99999999 | random | to_uuid }}'
 
     - name: Create a project
-      register: result
+      register: project
       samson_project:
         url: http://localhost:9080
         token: token
@@ -15,27 +15,21 @@
         name: dotfiles
         repository_url: https://github.com/danihodovic/.dotfiles
 
-    - name: Assert that the creation was correct
-      assert:
-        that:
-          - result.changed == true
-          - result.project.permalink == '{{ permalink }}'
-          - result.project.name == 'dotfiles'
-          - result.project.repository_url == 'https://github.com/danihodovic/.dotfiles'
-
-    - name: Update project
-      register: result
-      samson_project:
+    - name: Create command
+      register: command
+      samson_command:
         url: http://localhost:9080
         token: token
-        permalink: '{{ permalink }}'
-        name: updated name
-        repository_url: https://github.com/danihodovic/docker-sopcast
+        command: 'echo "hello from samson-ansible"'
+        project_id: '{{ project.project.id }}'
 
-    - name: Delete project
-      register: result
-      samson_project:
-        state: absent
+    - name: Create a stage
+      register: stage
+      samson_stage:
         url: http://localhost:9080
         token: token
+        project_permalink: '{{ permalink }}'
         permalink: '{{ permalink }}'
+        name: test
+        command_ids:
+          - '{{ command.command.id }}'
