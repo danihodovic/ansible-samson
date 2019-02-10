@@ -3,12 +3,24 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 import json
+import os
+from os.path import dirname, abspath, join
 import sys
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import Request
 
-# pylint: disable=E0611,E0401
-from ansible.module_utils.samson_utils import entity_url
+# Handle running in debug mode as we can't import from module_utils if we're
+# running outside of Ansible, e.g:
+# cat stage_args.json | ENV=dev python2 library/samson_stage.py
+if os.environ.get("ENV") == "dev":
+    module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
+    sys.path.append(module_utils_path)
+    # pylint: disable=E0611,E0401
+    from samson_utils import entity_url
+else:
+    # pylint: disable=E0611,E0401
+    from ansible.module_utils.samson_utils import entity_url
+
 
 if sys.version_info.major == 3:
     # pylint: disable=E0611,E0401
@@ -20,7 +32,7 @@ else:
 def create(module, http_client, base_url, params):
     ids = find_commands(http_client, base_url, params)
     if ids:
-        module.exit_json(changed=False, command=params)
+        module.exit_json(changed=False, command=ids[0])
 
     url = entity_url(base_url)
     try:
@@ -35,13 +47,14 @@ def create(module, http_client, base_url, params):
 
 
 def delete(module, http_client, base_url, params):
-    ids = find_commands(http_client, base_url, params)
-    if not ids:
+    commands = find_commands(http_client, base_url, params)
+    if not commands:
         module.exit_json(changed=False)
 
     try:
-        for command_id in ids:
-            url = entity_url(base_url, identifier=str(command_id))
+        for command in commands:
+            url = entity_url(base_url, identifier=str(command["id"]))
+            print("url", url)
             http_client.delete(url)
 
         module.exit_json(changed=True)
@@ -54,15 +67,15 @@ def find_commands(http_client, base_url, params):
     res = http_client.get(url)
     body = json.load(res)
 
-    ids = []
+    commands = []
     for command in body["commands"]:
         if (
             params["command"] == command["command"]
             and params["project_id"] == command["project_id"]
         ):
-            ids.append(command["id"])
+            commands.append(command)
 
-    return ids
+    return commands
 
 
 def main():

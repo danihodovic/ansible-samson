@@ -42,7 +42,7 @@
       samson_stage:
         <<: *updated_params
 
-    - name: Assert that the task was not changed
+    - name: Assert that the task was changed because stage updates are not idempotent
       assert:
         that:
-          - result.changed == false
+          - result.changed == true
