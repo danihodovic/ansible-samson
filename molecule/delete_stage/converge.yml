@@ -7,9 +7,6 @@
         project_permalink: '{{ 99999999 | random | to_uuid }}'
         stage_permalink: '{{ 99999999 | random | to_uuid }}'
 
-    - debug: var=project_permalink
-    - debug: var=stage_permalink
-
     - name: Create project
       register: project_result
       samson_project:

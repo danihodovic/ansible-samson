@@ -1,0 +1,66 @@
+---
+- name: Create stage
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        project_permalink: '{{ 99999999 | random | to_uuid }}'
+        cmd: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a command without a project
+      register: command_without_project
+      samson_command: &params_command_without_project
+        url: http://localhost:9080
+        token: token
+        command: '{{ cmd }}'
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - command_without_project.changed == true
+          - command_without_project.command.command == cmd
+          - command_without_project.command.project_id == None
+
+    - name: Create command without project again
+      register: command_without_project_2
+      samson_command:
+        <<: *params_command_without_project
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - command_without_project_2.changed == false
+
+    - name: Create a project
+      register: project
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ project_permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Create a command with a project
+      register: command_with_project
+      samson_command: &params_command_with_project
+        url: http://localhost:9080
+        token: token
+        command: '{{ cmd }}'
+        project_id: '{{ project.project.id }}'
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - command_with_project.changed == true
+          - command_with_project.command.command == cmd
+          - command_with_project.command.project_id == project.project.id
+
+    - name: Create command with project again
+      register: command_with_project_2
+      samson_command:
+        <<: *params_command_with_project
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - command_with_project_2.changed == false
