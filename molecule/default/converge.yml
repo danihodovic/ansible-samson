@@ -1,0 +1,41 @@
+---
+- name: Create / update / delete Samson project
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a project
+      register: result
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Assert that the creation was correct
+      assert:
+        that:
+          - result.changed == true
+          - result.project.permalink == '{{ permalink }}'
+          - result.project.name == 'dotfiles'
+          - result.project.repository_url == 'https://github.com/danihodovic/.dotfiles'
+
+    - name: Update project
+      register: result
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: updated name
+        repository_url: https://github.com/danihodovic/docker-sopcast
+
+    - name: Delete project
+      register: result
+      samson_project:
+        state: absent
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'

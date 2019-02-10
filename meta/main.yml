@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: Dani Hodovic
+  description: Ansible modules for Samson deployment UI
+  company: HoneyLogic OU
+  license: license (MIT)
+  min_ansible_version: 2.4
+  galaxy_tags:
+    - zendesk/samson
+    - deployments
+    - deployment UI
+dependencies: []

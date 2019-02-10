@@ -1,0 +1,38 @@
+---
+- name: Update tests
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a project
+      register: result
+      samson_project: &params
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Update project
+      register: result
+      samson_project: &updated_params
+        <<: *params
+        name: updated name
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - result.changed == true
+          - result.project.name == 'updated name'
+
+    - name: Update again with the same parameters
+      register: result
+      samson_project:
+        <<: *updated_params
+
+    - name: Assert that the task was not changed
+      assert:
+        that:
+          - result.changed == false

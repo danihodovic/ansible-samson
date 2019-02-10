@@ -1,0 +1,48 @@
+---
+- name: Update stage
+  hosts: molecule-samson-update-stage
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        project_permalink: '{{ 99999999 | random | to_uuid }}'
+        stage_permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create project
+      register: project_result
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ project_permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Create stage
+      register: result
+      samson_stage: &params
+        url: http://localhost:9080
+        token: token
+        project_permalink: '{{ project_permalink }}'
+        permalink: '{{ stage_permalink }}'
+        name: test
+
+    - name: Update stage
+      register: result
+      samson_stage: &updated_params
+        <<: *params
+        name: updated name
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - result.changed == true
+          - result.stage.name == 'updated name'
+
+    - name: Update stage again with the same parameters
+      register: result
+      samson_stage:
+        <<: *updated_params
+
+    - name: Assert that the task was not changed
+      assert:
+        that:
+          - result.changed == false

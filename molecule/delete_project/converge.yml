@@ -1,0 +1,42 @@
+---
+- name: Delete tests
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a project
+      register: result
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Delete project
+      register: result
+      samson_project:
+        state: absent
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+
+    - name: Assert that the deletion returned a changed task
+      assert:
+        that:
+          - result is changed
+
+    - name: Delete the project again
+      register: result
+      samson_project:
+        state: absent
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - result is not changed

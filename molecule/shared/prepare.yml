@@ -1,0 +1,26 @@
+---
+- name: Prepare Samson
+  hosts: all
+  tasks:
+    - name: Install sqlite3
+      apt:
+        name: sqlite3
+
+    - set_fact:
+        samson_token: token
+
+    - name: Inject test credentials
+      shell: 'sqlite3 db/development.sqlite3 "{{ item }}"'
+      loop:
+        # role_id 3 = super user
+        - insert into users (name, role_id) values ('test_user', 3);
+
+        - >
+          insert into oauth_applications
+          (name, uid, secret, redirect_uri, created_at, updated_at) values
+          ('name', 'uid', 'secret', 'http://test.com', date('now'), date('now'))
+
+        - >
+          insert into oauth_access_tokens
+          (resource_owner_id, application_id, token, scopes, created_at) values
+          (1, 1, '{{ samson_token }}', 'default', date('now'));
