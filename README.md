@@ -33,6 +33,15 @@ It supports:
         name: dotfiles
         repository_url: https://github.com/danihodovic/.dotfiles
 
+    - name: Create deployment command
+      register: command
+      samson_command:
+        url: '{{ samson_url }}'
+        token: '{{ samson_token }}'
+        project_id: '{{ project.project.id }}'
+        command: |
+          echo "deploying my project!"
+
     - name: Create staging
       samson_stage:
         url: '{{ samson_url }}'
@@ -40,14 +49,8 @@ It supports:
         name: staging
         permalink: staging
         project_permalink: '{{ project.project.permalink }}'
-
-    - name: Create deployment command
-      samson_command:
-        url: '{{ samson_url }}'
-        token: '{{ samson_token }}'
-        project_id: '{{ project.project.id }}'
-        command: |
-          echo "deploying my project!"
+        command_ids:
+          - '{{ command.command.id }}'
 ```
 
 License
