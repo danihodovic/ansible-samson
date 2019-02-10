@@ -55,9 +55,9 @@ def update(module, http_client, samson_url, project, ansible_params):
     updated_project = project.copy()
     updated_project.update(ansible_params)
     updated_project = strip_disallowed_props(updated_project)
-    project = strip_disallowed_props(project)
+    project_copy = strip_disallowed_props(project)
 
-    if project == updated_project:
+    if project_copy == updated_project:
         module.exit_json(changed=False, project=project)
 
     try:

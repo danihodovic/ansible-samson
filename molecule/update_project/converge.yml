@@ -36,3 +36,4 @@
       assert:
         that:
           - result.changed == false
+          - result.project.id != None
