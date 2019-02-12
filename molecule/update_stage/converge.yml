@@ -1,6 +1,6 @@
 ---
 - name: Update stage
-  hosts: molecule-samson-update-stage
+  hosts: molecule-samson
   tasks:
     - name: Create a random permalink to not clash with other tests
       set_fact:

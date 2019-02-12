@@ -1,0 +1,10 @@
+---
+- name: Create
+  hosts: localhost
+  tasks:
+    - name: Start the container
+      docker_container:
+        image: danihodovic/ansible-samson-test:latest
+        name: '{{ molecule_yml.platforms[0].name }}'
+        ports:
+          - '9080:9080'
