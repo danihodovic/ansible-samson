@@ -53,15 +53,8 @@ def extract_html_error(html):
 def create(module, http_client, base_url, ansible_params):
     try:
         url = entity_url(base_url)
-        url = url.replace(".json", "")
         stage = strip_none_props(ansible_params)
         res = http_client.post(url, data=json.dumps(stage))
-
-        html = res.read()
-        m = re.search("There was an error", html)
-        if m:
-            msg = extract_html_error(html)
-            module.fail_json(msg=msg)
 
         # Samson uses the name as the permalink on create so we have to send
         # another request to rename the permalink to the one that was provided.
@@ -69,13 +62,9 @@ def create(module, http_client, base_url, ansible_params):
         # breaking Ansible since permalink becomes the de-facto identifier.
         url = entity_url(base_url, ansible_params["name"])
         res = http_client.patch(
-            url,
-            data=json.dumps({"permalink": ansible_params["permalink"]}),
-            follow_redirects="yes",
+            url, data=json.dumps({"permalink": ansible_params["permalink"]})
         )
 
-        url = entity_url(base_url, ansible_params["permalink"])
-        res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
     except HTTPError as err:
@@ -89,22 +78,9 @@ def update(module, http_client, base_url, stage, ansible_params):
     ansible_params = strip_none_props(ansible_params)
 
     try:
-        url = entity_url(
-            base_url, identifier=ansible_params["permalink"], json_suffix=False
-        )
-        res = http_client.patch(
-            url, data=json.dumps(dict(stage=ansible_params)), follow_redirects="yes"
-        )
+        url = entity_url(base_url, identifier=ansible_params["permalink"])
+        res = http_client.patch(url, data=json.dumps(dict(stage=ansible_params)))
 
-        html = res.read()
-        m = re.search("There was an error", html)
-
-        if m:
-            msg = extract_html_error(html)
-            module.fail_json(msg=msg)
-
-        url = entity_url(base_url, ansible_params["permalink"])
-        res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
 
@@ -130,9 +106,7 @@ def upsert(module, http_client, base_url, ansible_params):
 
 def delete(module, http_client, base_url, stage):
     try:
-        http_client.delete(
-            entity_url(base_url, stage["permalink"]), follow_redirects="yes"
-        )
+        http_client.delete(entity_url(base_url, stage["permalink"]))
         module.exit_json(changed=True)
     except HTTPError as err:
         if err.code == 404:
