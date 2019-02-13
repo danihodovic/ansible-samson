@@ -18,10 +18,15 @@ if os.environ.get("ENV") == "dev":
     module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
     sys.path.append(module_utils_path)
     # pylint: disable=E0611,E0401
-    from samson_utils import entity_url
+    from samson_utils import entity_url, delete_entity, validate_permalink
 else:
     # pylint: disable=E0611,E0401
-    from ansible.module_utils.samson_utils import entity_url
+    from ansible.module_utils.samson_utils import (
+        entity_url,
+        delete_entity,
+        validate_permalink,
+    )
+
 
 if sys.version_info.major == 3:
     # pylint: disable=E0611,E0401
@@ -29,25 +34,9 @@ if sys.version_info.major == 3:
 else:
     from urllib2 import HTTPError
 
-# Samson sanitizes permalinks. It transforms spaces and underscores to dashes.
-# It's better to fail in this case as the permalink is the de-facto identifier.
-VALID_PERMALINK_REGEX = "^[A-Za-z0-9-]+$"
-
 
 def strip_none_props(d):
     return {k: v for k, v in d.items() if v is not None}
-
-
-def extract_html_error(html):
-    lines = html.split("\n")
-    err_line_idx = None
-    for idx, line in enumerate(lines):
-        if re.search("There was an error", line):
-            err_line_idx = idx
-    err_msg = lines[err_line_idx + 1]
-    err_msg = re.sub("<.*?>", "", err_msg)
-    err_msg = err_msg.strip()
-    return err_msg
 
 
 def create(module, http_client, base_url, ansible_params):
@@ -79,7 +68,7 @@ def update(module, http_client, base_url, stage, ansible_params):
 
     try:
         url = entity_url(base_url, identifier=ansible_params["permalink"])
-        res = http_client.patch(url, data=json.dumps(dict(stage=ansible_params)))
+        res = http_client.patch(url, data=json.dumps(ansible_params))
 
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
@@ -102,21 +91,6 @@ def upsert(module, http_client, base_url, ansible_params):
             raise err
 
         create(module, http_client, base_url, ansible_params)
-
-
-def delete(module, http_client, base_url, stage):
-    try:
-        http_client.delete(entity_url(base_url, stage["permalink"]))
-        module.exit_json(changed=True)
-    except HTTPError as err:
-        if err.code == 404:
-            module.exit_json(changed=False)
-
-        raise err
-
-
-def valid_permalink(permalink):
-    return bool(re.search(VALID_PERMALINK_REGEX, permalink))
 
 
 def main():
@@ -167,9 +141,7 @@ def main():
         argument_spec=argument_spec, required_if=[["state", "present", ["name"]]]
     )
 
-    if not valid_permalink(module.params["permalink"]):
-        msg = "Permalink should match `{}`".format(VALID_PERMALINK_REGEX)
-        module.exit_json(msg=msg)
+    validate_permalink(module)
 
     state = module.params["state"]
     stage = module.params.copy()
@@ -193,7 +165,7 @@ def main():
     if state == "present":
         upsert(module, http_client, base_url, stage)
     elif state == "absent":
-        delete(module, http_client, base_url, stage)
+        delete_entity(module, http_client, base_url, stage)
 
 
 if __name__ == "__main__":
