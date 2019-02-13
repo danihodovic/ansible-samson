@@ -1,3 +1,4 @@
+![](./logo.png)
 # Ansible modules for Samson
 
 ![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
