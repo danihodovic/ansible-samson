@@ -1,4 +1,4 @@
-![](https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true)
+![](https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true | width=100)
 # Ansible modules for Samson
 
 ![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
