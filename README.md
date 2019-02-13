@@ -1,4 +1,5 @@
-![](https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true | width=100)
+<img src="https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true" width="390px">
+
 # Ansible modules for Samson
 
 ![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
