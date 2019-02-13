@@ -1,4 +1,4 @@
-<img src="https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true" width="390px">
+<img src="https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true">
 
 # Ansible modules for Samson
 
