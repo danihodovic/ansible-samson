@@ -4,8 +4,9 @@ __metaclass__ = type
 
 import json
 import os
-from os.path import dirname, abspath, join
 import sys
+
+from os.path import dirname, abspath, join
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import Request
 
@@ -59,6 +60,9 @@ def delete(module, http_client, base_url, params):
 
         module.exit_json(changed=True)
     except HTTPError as err:
+        if err.code == 404:
+            module.exit_json(changed=False)
+
         raise err
 
 

@@ -14,5 +14,5 @@ install:
   - docker build -t danihodovic/ansible-samson-test -f Dockerfile.test .
 
 script:
-  - black --check library
+  - black --check library module_utils
   - molecule test --all
