@@ -1,9 +1,11 @@
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __metaclass__ = type
 
+import json
 import os
 import sys
+import re
 
 from os.path import dirname, abspath, join
 from ansible.module_utils.basic import AnsibleModule
@@ -17,14 +19,33 @@ if os.environ.get("ENV") == "dev":
     module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
     sys.path.append(module_utils_path)
     # pylint: disable=no-name-in-module, import-error
-    from samson_utils import delete_entity, validate_permalink, upsert_using_html
+    from samson_utils import (
+        entity_url,
+        strip_disallowed_props,
+        delete_entity,
+        validate_permalink,
+        extract_html_errors,
+        find_item,
+        upsert_using_html,
+    )
 else:
     # pylint: disable=no-name-in-module, import-error
     from ansible.module_utils.samson_utils import (
+        entity_url,
+        strip_disallowed_props,
         delete_entity,
         validate_permalink,
+        extract_html_errors,
+        find_item,
         upsert_using_html,
     )
+
+
+if sys.version_info.major == 3:
+    # pylint: disable=no-name-in-module, import-error
+    from urllib.error import URLError as HTTPError
+else:
+    from urllib2 import HTTPError
 
 
 def main():
@@ -34,7 +55,8 @@ def main():
         token=dict(required=True, type="str"),
         permalink=dict(required=True, type="str"),
         name=dict(type="str"),
-        production=dict(type="bool", default=False),
+        env_value=dict(required=False, type="str"),
+        environment_id=dict(required=True, type="int"),
     )
 
     module = AnsibleModule(
@@ -43,9 +65,13 @@ def main():
 
     validate_permalink(module)
 
-    base_url = "/".join([module.params["url"], "environments"])
+    base_url = "/".join([module.params["url"], "deploy_groups"])
     state = module.params["state"]
-    params = dict((k, module.params[k]) for k in ("permalink", "name", "production"))
+    params = dict(
+        (k, module.params[k])
+        for k in ("permalink", "name", "env_value", "environment_id")
+    )
+    params = dict((k, v) for k, v in params.iteritems() if v)
 
     http_client = Request(
         headers={
@@ -55,7 +81,7 @@ def main():
     )
 
     if state == "present":
-        upsert_using_html(module, http_client, base_url, params, "environment")
+        upsert_using_html(module, http_client, base_url, params, "deploy_group")
 
     if state == "absent":
         delete_entity(module, http_client, base_url, params, json_suffix=False)

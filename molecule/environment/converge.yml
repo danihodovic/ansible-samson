@@ -1,5 +1,5 @@
 ---
-- name: Create stage
+- name: Environments tests
   hosts: molecule-samson
   tasks:
     - name: Create a random permalink to not clash with other tests
@@ -35,7 +35,7 @@
     - name: Assert the error message
       assert:
         that:
-          - same_name_result.msg == 'Name has already been taken'
+          - same_name_result.msg.errors == ['Name has already been taken']
 
     - name: Update the environment
       register: update_result
@@ -53,6 +53,7 @@
           - update_result.environment.permalink == permalink
           - update_result.environment.name == 'renamed {{ permalink }}'
           - update_result.environment.production == false
+          - update_result.environment.id is defined
 
     - name: Update the environment again
       register: update_again_result
@@ -63,6 +64,7 @@
       assert:
         that:
           - update_again_result.changed == false
+          - update_again_result.environment.id is defined
 
     - name: Delete
       register: delete_result
