@@ -8,12 +8,17 @@ else:
     from urllib2 import HTTPError
 
 
-def entity_url(base_url, identifier=""):
+def entity_url(base_url, identifier="", json_suffix=True):
     parts = [base_url]
     if identifier:
         parts.append(identifier)
 
-    return "{}.json".format("/".join(parts))
+    url = format("/".join(parts))
+
+    if json_suffix:
+        return url + ".json"
+
+    return url
 
 
 def strip_disallowed_props(obj, disallowed_props):
@@ -24,10 +29,10 @@ def strip_disallowed_props(obj, disallowed_props):
     return d
 
 
-def delete_entity(module, http_client, base_url, entity):
+def delete_entity(module, http_client, base_url, entity, json_suffix=True):
     try:
-        url = entity_url(base_url, entity["permalink"])
-        http_client.delete(url)
+        url = entity_url(base_url, entity["permalink"], json_suffix=json_suffix)
+        http_client.delete(url, follow_redirects=True)
         module.exit_json(changed=True)
     except HTTPError as err:
         if err.code == 404:
