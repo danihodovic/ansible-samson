@@ -7,6 +7,8 @@ This role contains modules to simplify working with
 
 It supports:
 
+- environments
+- deploy groups
 - projects
 - stages
 - commands
