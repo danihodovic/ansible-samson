@@ -6,6 +6,25 @@
       set_fact:
         permalink: '{{ 99999999 | random | to_uuid }}'
 
+    - name: Create an environment
+      register: env
+      samson_environment:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: 'prod {{ permalink }}'
+        production: true
+
+    - name: Create a deploy group
+      register: deploy_group
+      samson_deploy_group: &create_params
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: 'dg {{ permalink }}'
+        environment_id: '{{ env.environment.id }}'
+        env_value: "env_value_{{ permalink }}"
+
     - name: Create a project
       register: project
       samson_project:
@@ -31,5 +50,7 @@
         project_permalink: '{{ permalink }}'
         permalink: '{{ permalink }}'
         name: test
+        deploy_group_ids:
+          - '{{ deploy_group.deploy_group.id }}'
         command_ids:
           - '{{ command.command.id }}'

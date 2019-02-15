@@ -1,0 +1,94 @@
+---
+- name: Deploy group tests
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create an environment
+      register: env
+      samson_environment:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: 'env {{ permalink }}'
+        production: true
+
+    - name: Create a second environment
+      register: env2
+      samson_environment:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ 9 | random | to_uuid }}'
+        name: 'env2 {{ permalink }}'
+        production: true
+
+    - name: Create
+      register: create_result
+      samson_deploy_group: &create_params
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: 'dg {{ permalink }}'
+        environment_id: '{{ env.environment.id }}'
+        env_value: "env_val_{{ permalink }}"
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - create_result.changed == true
+          - create_result.deploy_group.permalink == permalink
+          - create_result.deploy_group.environment_id == env.environment.id
+          - create_result.deploy_group.name == 'dg {{ permalink }}'
+          - create_result.deploy_group.env_value == 'env_val_{{ permalink }}'
+
+    - name: Update
+      register: update_result
+      samson_deploy_group: &update_params
+        <<: *create_params
+        permalink: '{{ permalink }}'
+        name: 'changed {{ permalink }}'
+        environment_id: '{{ env2.environment.id }}'
+        env_value: "changed_{{ permalink }}"
+
+    - name: Assert that all props were updated
+      assert:
+        that:
+          - update_result.changed == true
+          - update_result.deploy_group.permalink == permalink
+          - update_result.deploy_group.environment_id == env2.environment.id
+          - update_result.deploy_group.name == 'changed {{ permalink }}'
+          - update_result.deploy_group.env_value == 'changed_{{ permalink }}'
+
+    - name: Update again
+      register: update_again_result
+      samson_deploy_group:
+        <<: *update_params
+
+    - name: Assert that nothing is changed
+      assert:
+        that:
+          - update_again_result.changed == false
+
+    - name: Delete
+      register: delete_result
+      samson_deploy_group:
+        <<: *create_params
+        state: absent
+
+    - name: Assert that the deletion returned a changed task
+      assert:
+        that:
+          - delete_result is changed
+
+    - name: Delete again
+      register: delete_again_result
+      samson_deploy_group:
+        <<: *create_params
+        state: absent
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - delete_again_result is not changed

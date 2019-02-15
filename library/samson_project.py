@@ -68,7 +68,7 @@ def create(module, http_client, base_url, ansible_params):
         module.exit_json(changed=True, project=project)
     except HTTPError as err:
         msg = err.msg
-        if err.code == 400:
+        if err.code == 422:
             msg = json.load(err)
         module.fail_json(changed=False, msg=msg)
 
@@ -89,7 +89,7 @@ def update(module, http_client, base_url, project, ansible_params):
         module.exit_json(changed=True, project=project)
     except HTTPError as err:
         msg = err.msg
-        if err.code == 400:
+        if err.code == 422:
             msg = json.load(err)
         module.fail_json(changed=False, msg=msg)
 
@@ -103,7 +103,7 @@ def upsert(module, http_client, base_url, ansible_params):
     # pylint: disable=W0703
     except HTTPError as err:
         msg = err.msg
-        if err.code == 400:
+        if err.code == 422:
             msg = json.load(err)
 
         if err.code != 404:

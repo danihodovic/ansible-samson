@@ -39,17 +39,27 @@ def strip_none_props(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
+def find_stage_by_name(http_client, base_url, name):
+    res = http_client.get(entity_url(base_url))
+    stages = json.load(res)["stages"]
+    for stage in stages:
+        if stage["name"] == name:
+            return stage
+    return None
+
+
 def create(module, http_client, base_url, ansible_params):
     try:
         url = entity_url(base_url)
         stage = strip_none_props(ansible_params)
-        res = http_client.post(url, data=json.dumps(stage))
+        res = http_client.post(url, data=json.dumps({"stage": stage}))
 
-        # Samson uses the name as the permalink on create so we have to send
-        # another request to rename the permalink to the one that was provided.
-        # This allows users to change the project name in the web UI without
-        # breaking Ansible since permalink becomes the de-facto identifier.
-        url = entity_url(base_url, ansible_params["name"])
+        # The Samson API doesn't actually use the permalink we provided on
+        # creation. Instead it uses the name with whitespace replaced by dashes.
+        # We need to perform a creation post-update to ensure the permalink is
+        # the one the user provided.
+        stage = find_stage_by_name(http_client, base_url, ansible_params["name"])
+        url = entity_url(base_url, stage["permalink"])
         res = http_client.patch(
             url, data=json.dumps({"permalink": ansible_params["permalink"]})
         )
@@ -58,7 +68,7 @@ def create(module, http_client, base_url, ansible_params):
         module.exit_json(changed=True, stage=stage)
     except HTTPError as err:
         msg = err.msg
-        if err.code == 400:
+        if err.code == 422:
             msg = json.load(err)
         module.fail_json(changed=False, msg=msg)
 
@@ -75,7 +85,7 @@ def update(module, http_client, base_url, stage, ansible_params):
 
     except HTTPError as err:
         msg = err.msg
-        if err.code == 400:
+        if err.code == 422:
             msg = json.load(err)
         module.fail_json(changed=False, msg=msg)
 
