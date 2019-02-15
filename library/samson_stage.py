@@ -33,8 +33,16 @@ def strip_none_props(d):
     return {k: v for k, v in d.items() if v is not None}
 
 
+def stage_url(base_url, identifier=""):
+    return entity_url(
+        base_url,
+        identifier=identifier,
+        query={'inlines': 'slack_webhooks_attributes'}
+    )
+
+
 def find_stage_by_name(http_client, base_url, name):
-    res = http_client.get(entity_url(base_url))
+    res = http_client.get(stage_url(base_url))
     stages = json.load(res)["stages"]
     for stage in stages:
         if stage["name"] == name:
@@ -44,7 +52,7 @@ def find_stage_by_name(http_client, base_url, name):
 
 def create(module, http_client, base_url, ansible_params):
     try:
-        url = entity_url(base_url)
+        url = stage_url(base_url)
         stage = strip_none_props(ansible_params)
         res = http_client.post(url, data=json.dumps({"stage": stage}))
 
@@ -53,11 +61,16 @@ def create(module, http_client, base_url, ansible_params):
         # We need to perform a creation post-update to ensure the permalink is
         # the one the user provided.
         stage = find_stage_by_name(http_client, base_url, ansible_params["name"])
-        url = entity_url(base_url, stage["permalink"])
-        res = http_client.patch(
+        url = stage_url(base_url, stage["permalink"])
+        http_client.patch(
             url, data=json.dumps({"permalink": ansible_params["permalink"]})
         )
 
+        # TODO: Delete addition GET after
+        # https://github.com/zendesk/samson/pull/3182#issuecomment-466330765
+        # is resolved.
+        url = stage_url(base_url, ansible_params["permalink"])
+        res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
     except HTTPError as err:
@@ -71,9 +84,12 @@ def update(module, http_client, base_url, stage, ansible_params):
     ansible_params = strip_none_props(ansible_params)
 
     try:
-        url = entity_url(base_url, identifier=ansible_params["permalink"])
-        res = http_client.patch(url, data=json.dumps(ansible_params))
-
+        url = stage_url(base_url, identifier=ansible_params["permalink"])
+        http_client.patch(url, data=json.dumps(ansible_params))
+        # TODO: Delete addition GET after
+        # https://github.com/zendesk/samson/pull/3182#issuecomment-466330765
+        # is resolved.
+        res = http_client.get(url)
         stage = json.load(res)["stage"]
         module.exit_json(changed=True, stage=stage)
 
@@ -86,7 +102,7 @@ def update(module, http_client, base_url, stage, ansible_params):
 
 def upsert(module, http_client, base_url, ansible_params):
     try:
-        url = entity_url(base_url, ansible_params["permalink"])
+        url = stage_url(base_url, ansible_params["permalink"])
         res = http_client.get(url)
         stage = json.load(res)["stage"]
         update(module, http_client, base_url, stage, ansible_params)
@@ -108,6 +124,19 @@ def main():
         name=dict(type="str"),
         command_ids=dict(type="list"),
         deploy_group_ids=dict(type="list"),
+        slack_webhooks_attributes=dict(
+            type='list',
+            elements='dict',
+            options=dict(
+                webhook_url=dict(required=True, type='str'),
+                channel=dict(type='str'),
+                buddy_box=dict(type='bool', default=False),
+                buddy_request=dict(type='bool', default=False),
+                before_deploy=dict(type='bool', default=False),
+                on_deploy_success=dict(type='bool', default=False),
+                on_deploy_failure=dict(type='bool', default=False),
+            )
+        ),
         allow_redeploy_previous_when_failed=dict(type="bool"),
         aws_sts_iam_role_arn=dict(type="str"),
         block_on_gcr_vulnerabilities=dict(type="bool"),

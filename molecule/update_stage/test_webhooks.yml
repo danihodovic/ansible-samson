@@ -1,0 +1,69 @@
+---
+- name: Create a random permalink to not clash with other tests
+  set_fact:
+    permalink: '{{ 99999999 | random | to_uuid }}'
+
+- name: Create project
+  register: project_result
+  samson_project:
+    url: http://localhost:9080
+    token: token
+    permalink: '{{ permalink }}'
+    name: dotfiles
+    repository_url: https://github.com/danihodovic/.dotfiles
+
+- name: Create stage
+  register: result
+  samson_stage: &params
+    url: http://localhost:9080
+    token: token
+    project_permalink: '{{ permalink }}'
+    permalink: '{{ permalink }}'
+    name: test
+    slack_webhooks_attributes:
+      - webhook_url: https://first-webhook.slack
+        channel: '1'
+        buddy_box: true
+        buddy_request: true
+        before_deploy: true
+        on_deploy_success: true
+        on_deploy_failure: true
+      - webhook_url: https://second-webhook.slack
+        channel: '2'
+        buddy_box: true
+        buddy_request: true
+        before_deploy: true
+        on_deploy_success: true
+        on_deploy_failure: true
+
+- name: Update stage
+  register: result
+  samson_stage: &updated_params
+    <<: *params
+    name: updated name
+    slack_webhooks_attributes:
+      - webhook_url: https://second-webhook.slack
+        channel: '2'
+        buddy_box: false
+        buddy_request: false
+        before_deploy: false
+        on_deploy_success: false
+        on_deploy_failure: true
+      - webhook_url: https://third-webhook.slack
+        channel: '3'
+        buddy_box: false
+        buddy_request: false
+        before_deploy: true
+        on_deploy_success: false
+        on_deploy_failure: false
+
+- set_fact:
+    webhooks: '{{ result.stage.slack_webhooks_attributes | sort(attribute="channel") }}'
+
+- debug: var=webhooks
+
+# - name: Assert that the webhooks were updated
+  # assert:
+    # that:
+      # - result.changed == true
+      # - result.stage.name == 'updated name'
