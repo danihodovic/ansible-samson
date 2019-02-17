@@ -1,8 +1,8 @@
-from __future__ import (
+from __future__ import (  # pylint: disable=unused-variable
     absolute_import,
     division,
     print_function,
-)  # pylint: disable=unused-variable
+)
 
 __metaclass__ = type  # pylint: disable=unused-variable
 
@@ -19,9 +19,9 @@ if os.environ.get("ENV") == "dev":
     sys.path.append(module_utils_path)
     import samson_utils  # pylint: disable=no-name-in-module, import-error
 else:
-    from ansible.module_utils import (
+    from ansible.module_utils import (  # pylint: disable=no-name-in-module, ungrouped-imports
         samson_utils,
-    )  # pylint: disable=no-name-in-module, ungrouped-imports
+    )
 
 delete_entity = samson_utils.delete_entity
 validate_permalink = samson_utils.validate_permalink
