@@ -1,30 +1,31 @@
-from __future__ import absolute_import, division, print_function
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+)  # pylint: disable=unused-variable
 
-__metaclass__ = type
+__metaclass__ = type  # pylint: disable=unused-variable
 
 import os
+from os.path import dirname, abspath, join
 import sys
 
-from os.path import dirname, abspath, join
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import Request
 
 
-# Handle running in debug mode as we can't import from module_utils if we're
-# running outside of Ansible, e.g:
-# cat stage_args.json | ENV=dev python2 library/samson_stage.py
 if os.environ.get("ENV") == "dev":
     module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
     sys.path.append(module_utils_path)
-    # pylint: disable=no-name-in-module, import-error
-    from samson_utils import delete_entity, validate_permalink, upsert_using_html
+    import samson_utils  # pylint: disable=no-name-in-module, import-error
 else:
-    # pylint: disable=no-name-in-module, import-error
-    from ansible.module_utils.samson_utils import (
-        delete_entity,
-        validate_permalink,
-        upsert_using_html,
-    )
+    from ansible.module_utils import (
+        samson_utils,
+    )  # pylint: disable=no-name-in-module, ungrouped-imports
+
+delete_entity = samson_utils.delete_entity
+validate_permalink = samson_utils.validate_permalink
+upsert_using_html = samson_utils.upsert_using_html
 
 
 def main():

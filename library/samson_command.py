@@ -1,33 +1,30 @@
-from __future__ import absolute_import, division, print_function
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+)  # pylint: disable=unused-variable
 
-__metaclass__ = type
+__metaclass__ = type  # pylint: disable=unused-variable
 
 import json
 import os
+from os.path import dirname, abspath, join
 import sys
 
-from os.path import dirname, abspath, join
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import Request
 
-# Handle running in debug mode as we can't import from module_utils if we're
-# running outside of Ansible, e.g:
-# cat stage_args.json | ENV=dev python2 library/samson_stage.py
 if os.environ.get("ENV") == "dev":
     module_utils_path = join(dirname(dirname(abspath(__file__))), "module_utils")
     sys.path.append(module_utils_path)
-    # pylint: disable=E0611,E0401
-    from samson_utils import entity_url
+    import samson_utils  # pylint: disable=no-name-in-module, import-error
 else:
-    # pylint: disable=E0611,E0401
-    from ansible.module_utils.samson_utils import entity_url
+    from ansible.module_utils import (
+        samson_utils,
+    )  # pylint: disable=no-name-in-module, ungrouped-imports
 
-
-if sys.version_info.major == 3:
-    # pylint: disable=E0611,E0401
-    from urllib.error import URLError as HTTPError
-else:
-    from urllib2 import HTTPError
+HTTPError = samson_utils.HTTPError
+entity_url = samson_utils.entity_url
 
 
 def create(module, http_client, base_url, params):
