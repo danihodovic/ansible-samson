@@ -3,10 +3,9 @@ import re
 import json
 
 if sys.version_info.major == 3:
-    # pylint: disable=E0611,E0401
-    from urllib.error import URLError as HTTPError
+    from urllib.error import URLError as HTTPError  # pylint: disable=import-error
 else:
-    from urllib2 import HTTPError
+    from urllib2 import HTTPError  # pylint: disable=import-error
 
 
 DISALLOWED_PROPS = ["id", "created_at", "updated_at", "deleted_at"]
@@ -69,7 +68,9 @@ def update_using_html(module, http_client, base_url, item, ansible_params, item_
         module.fail_json(changed=False, msg=msg)
 
 
-def upsert_using_html(module, http_client, base_url, ansible_params, item_type):
+def upsert_using_html(
+    module, http_client, base_url, ansible_params, item_type
+):  # pylint: disable=unused-variable
     try:
         by_permalink = lambda dg: dg["permalink"] == ansible_params["permalink"]
         item = find_item(http_client, base_url, item_type + "s", by_permalink)
@@ -106,7 +107,9 @@ def strip_disallowed_props(old, disallowed_props):
     return json.loads(json.dumps(new))
 
 
-def delete_entity(module, http_client, base_url, entity, json_suffix=True):
+def delete_entity(
+    module, http_client, base_url, entity, json_suffix=True
+):  # pylint: disable=unused-variable
     try:
         url = entity_url(base_url, entity["permalink"], json_suffix=json_suffix)
         http_client.delete(url, follow_redirects=True)
@@ -130,14 +133,13 @@ def find_item(http_client, base_url, json_key, condition):
 
 # Samson sanitizes permalinks. It transforms spaces and underscores to dashes.
 # It's better to fail in this case as the permalink is the de-facto identifier.
-def validate_permalink(module):
+def validate_permalink(module):  # pylint: disable=unused-variable
     VALID_PERMALINK_REGEX = "^[A-Za-z0-9-]+$"
     if not bool(re.search(VALID_PERMALINK_REGEX, module.params["permalink"])):
         msg = "Permalink should match `{}`".format(VALID_PERMALINK_REGEX)
         module.exit_json(changed=False, msg=msg)
 
 
-# TODO: Re use in environments
 def extract_html_errors(res):
     html = res.read()
     lines = html.split("\n")

@@ -10,9 +10,10 @@ python:
 cache: pip
 
 install:
-  - pip install molecule docker black
+  - pip install molecule docker black pylint
   - docker build -t danihodovic/ansible-samson-test -f Dockerfile.test .
 
 script:
   - black --check library module_utils
+  - pylint library module_utils --rcfile .pylintrc
   - molecule test --all

@@ -1,6 +1,10 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (  # pylint: disable=unused-variable
+    absolute_import,
+    division,
+    print_function,
+)
 
-__metaclass__ = type
+__metaclass__ = type  # pylint: disable=unused-variable
 
 import os
 from os.path import dirname, abspath, join
@@ -14,9 +18,9 @@ if os.environ.get("ENV") == "dev":
     sys.path.append(module_utils_path)
     import samson_utils  # pylint: disable=no-name-in-module, import-error
 else:
-    from ansible.module_utils import (
+    from ansible.module_utils import (  # pylint: disable=no-name-in-module, ungrouped-imports
         samson_utils,
-    )  # pylint: disable=no-name-in-module, ungrouped-imports
+    )
 
 delete_entity = samson_utils.delete_entity
 validate_permalink = samson_utils.validate_permalink
@@ -46,7 +50,7 @@ def main():
         (k, module.params[k])
         for k in ("permalink", "name", "env_value", "environment_id")
     )
-    params = dict((k, v) for k, v in params.iteritems() if v)
+    params = dict((k, v) for k, v in params.items() if v)
 
     http_client = Request(
         headers={
