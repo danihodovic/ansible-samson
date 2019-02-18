@@ -9,4 +9,15 @@ RUN bundle install --local --quiet --jobs 4
 COPY ./bootstrap_test_db.sh /app/
 RUN bash /app/bootstrap_test_db.sh
 
+
+ENV PLUGINS=all
+ENV DEFAULT_URL=http://localhost:3000
+
+# Variables taken from zendesk/samson.
+# Used to visually confirm that things work by using the Samson UI
+SECRET_TOKEN=e3711c777b49a9ba6f4cd44539f4c677e76f7c08c346875e50b11119c61839d385b2709f1fd8ac2d899b32dc818d1459b265cff91f6dcc635406a473cd903f4a
+ENV GITHUB_TOKEN=d9b4b56c467943114a79dd304a1c5a2452d9da82
+ENV GITHUB_CLIENT_ID=d2e5e0c9bb41c267bf4a
+ENV GITHUB_SECRET=db3f5943efdf601915691efc4dff9eea4959393a
+
 CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
