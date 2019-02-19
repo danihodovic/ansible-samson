@@ -7,4 +7,4 @@
         image: danihodovic/ansible-samson-test:latest
         name: '{{ molecule_yml.platforms[0].name }}'
         ports:
-          - '9080:9080'
+          - '3000:9080'
