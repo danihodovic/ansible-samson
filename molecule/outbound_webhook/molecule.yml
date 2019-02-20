@@ -1,0 +1,28 @@
+---
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: molecule-samson
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_MODULE_UTILS: ../../module_utils
+  lint:
+    name: ansible-lint
+    options:
+      x: [ANSIBLE0011]
+  playbooks:
+    create: ../shared/create.yml
+    converge: ./converge.yml
+scenario:
+  name: outbound_webhook
+  converge_sequence:
+    - create
+    - converge
+  test_sequence:
+    - lint
+    - syntax
+    - create
+    - converge

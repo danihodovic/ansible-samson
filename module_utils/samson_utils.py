@@ -131,6 +131,14 @@ def find_item(http_client, base_url, json_key, condition):
     return None
 
 
+def find_project_by_id(
+    http_client, base_url, project_id
+):  # pylint: disable=unused-variable
+    base_url = "/".join([base_url, "projects"])
+    condition = lambda project: project["id"] == project_id
+    return find_item(http_client, base_url, "projects", condition)
+
+
 # Samson sanitizes permalinks. It transforms spaces and underscores to dashes.
 # It's better to fail in this case as the permalink is the de-facto identifier.
 def validate_permalink(module):  # pylint: disable=unused-variable

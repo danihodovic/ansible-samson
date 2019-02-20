@@ -1,0 +1,79 @@
+---
+- name: Outbound webhook tests
+  hosts: molecule-samson
+  tasks:
+    - name: Create a random permalink to not clash with other tests
+      set_fact:
+        permalink: '{{ 99999999 | random | to_uuid }}'
+
+    - name: Create a project
+      register: project_result
+      samson_project:
+        url: http://localhost:9080
+        token: token
+        permalink: '{{ permalink }}'
+        name: dotfiles
+        repository_url: https://github.com/danihodovic/.dotfiles
+
+    - name: Create a stage
+      register: stage_result
+      samson_stage:
+        url: http://localhost:9080
+        token: token
+        project_permalink: '{{ permalink }}'
+        permalink: '{{ permalink }}'
+        name: test
+
+    - name: Create a webhook
+      register: create_result
+      samson_outbound_webhook: &create_params
+        url: http://localhost:9080
+        token: token
+        project_id: '{{ project_result.project.id }}'
+        stage_id: '{{ stage_result.stage.id }}'
+        webhook_url: http://foo.com
+        username: dani
+        password: hodovic
+
+    - name: Assert that the task was executed correctly
+      assert:
+        that:
+          - create_result.changed == true
+          - create_result.outbound_webhook.stage_id == stage_result.stage.id
+          - create_result.outbound_webhook.webhook_url == 'http://foo.com'
+          - create_result.outbound_webhook.username == 'dani'
+          - create_result.outbound_webhook.password is not defined
+          - create_result.outbound_webhook.id is defined
+
+    - name: Create with the same params
+      register: create_result_2
+      samson_outbound_webhook:
+        <<: *create_params
+
+    - name: Assert that nothing is changed
+      assert:
+        that:
+          - create_result_2.changed == false
+          - create_result_2.outbound_webhook.id is defined
+
+    - name: Delete
+      register: delete_result
+      samson_outbound_webhook:
+        <<: *create_params
+        state: absent
+
+    - name: Assert that the deletion returned a changed task
+      assert:
+        that:
+          - delete_result is changed
+
+    - name: Delete again
+      register: delete_again_result
+      samson_outbound_webhook:
+        <<: *create_params
+        state: absent
+
+    - name: Assert that nothing was changed
+      assert:
+        that:
+          - delete_again_result is not changed
