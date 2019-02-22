@@ -4,8 +4,10 @@ import json
 
 if sys.version_info.major == 3:
     from urllib.error import URLError as HTTPError  # pylint: disable=import-error
+    from urllib.parse import urlencode
 else:
     from urllib2 import HTTPError  # pylint: disable=import-error
+    from urllib import urlencode
 
 
 DISALLOWED_PROPS = ["id", "created_at", "updated_at", "deleted_at"]
@@ -86,7 +88,7 @@ def upsert_using_html(
         module.fail_json(changed=False, msg=err.msg)
 
 
-def entity_url(base_url, identifier="", json_suffix=True):
+def entity_url(base_url, identifier="", json_suffix=True, query={}):
     parts = [base_url]
     if identifier:
         parts.append(identifier)
@@ -94,7 +96,10 @@ def entity_url(base_url, identifier="", json_suffix=True):
     url = format("/".join(parts))
 
     if json_suffix:
-        return url + ".json"
+        url = url + ".json"
+
+    if query.keys():
+        url = url + "?" + urlencode(query)
 
     return url
 

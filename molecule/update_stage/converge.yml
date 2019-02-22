@@ -46,3 +46,6 @@
       assert:
         that:
           - result.changed == true
+
+    - import_tasks: ./test_webhooks.yml
+      tags: test-webhooks

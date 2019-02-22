@@ -4,8 +4,10 @@
   tasks:
     - name: Create a random permalink to not clash with other tests
       set_fact:
-        project_permalink: '{{ 99999999 | random | to_uuid }}'
-        stage_permalink: '{{ 99999999 | random | to_uuid }}'
+        project_permalink: p
+        stage_permalink: s
+        # project_permalink: '{{ 99999999 | random | to_uuid }}'
+        # stage_permalink: '{{ 99999999 | random | to_uuid }}'
 
     - name: Create a project
       register: project_result
@@ -24,6 +26,15 @@
         project_permalink: '{{ project_permalink }}'
         permalink: '{{ stage_permalink }}'
         name: test
+        slack_webhooks_attributes:
+          - webhook_url: https://myslack.org
+            # channel: '#devops'
+            buddy_box: true
+            # buddy_request: true
+            before_deploy: true
+            on_deploy_success: true
+            on_deploy_failure: true
+            # id: 199
 
     - set_fact:
         stage: '{{ result.stage }}'
