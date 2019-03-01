@@ -107,7 +107,7 @@ def main():
         permalink=dict(required=True, type="str"),
         name=dict(type="str"),
         command_ids=dict(type="list"),
-        deploy_group_ids=dict(type="list"),
+        deploy_group_ids=dict(required=True, type="list"),
         allow_redeploy_previous_when_failed=dict(type="bool"),
         aws_sts_iam_role_arn=dict(type="str"),
         block_on_gcr_vulnerabilities=dict(type="bool"),
