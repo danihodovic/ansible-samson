@@ -21,7 +21,7 @@
     - name: Assert that the changed is true
       assert:
         that:
-          - delete_command.changed == true
+          - delete_command is changed
 
     - name: Delete a command with the same params
       register: delete_command_2
@@ -32,4 +32,4 @@
     - name: Assert that nothing was changed
       assert:
         that:
-          - delete_command_2.changed == false
+          - delete_command_2 is not changed

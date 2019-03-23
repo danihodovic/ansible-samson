@@ -37,7 +37,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - create_result.changed == true
+          - create_result is changed
           - create_result.webhook.stage_id == stage_result.stage.id
           - create_result.webhook.branch == 'my_branch'
           - create_result.webhook.source == 'travis'
@@ -51,7 +51,7 @@
     - name: Assert that nothing is changed
       assert:
         that:
-          - create_result_2.changed == false
+          - create_result_2 is not changed
           - create_result_2.webhook.id is defined
 
     - name: Delete

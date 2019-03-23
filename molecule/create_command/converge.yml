@@ -17,7 +17,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - command_without_project.changed == true
+          - command_without_project is changed
           - command_without_project.command.command == cmd
           - command_without_project.command.project_id == None
 
@@ -29,7 +29,7 @@
     - name: Assert that nothing was changed
       assert:
         that:
-          - command_without_project_2.changed == false
+          - command_without_project_2 is not changed
 
     - name: Create a project
       register: project
@@ -51,7 +51,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - command_with_project.changed == true
+          - command_with_project is changed
           - command_with_project.command.command == cmd
           - command_with_project.command.project_id == project.project.id
 
@@ -63,4 +63,4 @@
     - name: Assert that nothing was changed
       assert:
         that:
-          - command_with_project_2.changed == false
+          - command_with_project_2 is not changed

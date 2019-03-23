@@ -37,7 +37,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - create_result.changed == true
+          - create_result is changed
           - create_result.deploy_group.permalink == permalink
           - create_result.deploy_group.environment_id == env.environment.id
           - create_result.deploy_group.name == 'dg {{ permalink }}'
@@ -55,7 +55,7 @@
     - name: Assert that all props were updated
       assert:
         that:
-          - update_result.changed == true
+          - update_result is changed
           - update_result.deploy_group.permalink == permalink
           - update_result.deploy_group.environment_id == env2.environment.id
           - update_result.deploy_group.name == 'changed {{ permalink }}'
@@ -69,7 +69,7 @@
     - name: Assert that nothing is changed
       assert:
         that:
-          - update_again_result.changed == false
+          - update_again_result is not changed
 
     - name: Delete
       register: delete_result

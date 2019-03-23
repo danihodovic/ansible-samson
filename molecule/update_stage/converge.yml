@@ -34,7 +34,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - result.changed == true
+          - result is changed
           - result.stage.name == 'updated name'
 
     - name: Update stage again with the same parameters
@@ -45,4 +45,4 @@
     - name: Assert that the task was changed because stage updates are not idempotent
       assert:
         that:
-          - result.changed == true
+          - result is changed
