@@ -24,7 +24,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - result.changed == true
+          - result is changed
           - result.project.name == 'updated name'
 
     - name: Update again with the same parameters
@@ -35,5 +35,5 @@
     - name: Assert that the task was not changed
       assert:
         that:
-          - result.changed == false
+          - result is not changed
           - result.project.id != None

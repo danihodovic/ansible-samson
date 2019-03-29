@@ -18,10 +18,10 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - create_result.changed == true
+          - create_result is changed
           - create_result.environment.permalink == permalink
           - create_result.environment.name == 'my great environment {{ permalink }}'
-          - create_result.environment.production == true
+          - create_result.environment.production
           - create_result.environment.id is defined
 
     - name: Create anther environment with the same name
@@ -49,10 +49,10 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - update_result.changed == true
+          - update_result is changed
           - update_result.environment.permalink == permalink
           - update_result.environment.name == 'renamed {{ permalink }}'
-          - update_result.environment.production == false
+          - not update_result.environment.production
           - update_result.environment.id is defined
 
     - name: Update the environment again
@@ -63,7 +63,7 @@
     - name: Assert that nothing is changed
       assert:
         that:
-          - update_again_result.changed == false
+          - update_again_result is not changed
           - update_again_result.environment.id is defined
 
     - name: Delete

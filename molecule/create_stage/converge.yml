@@ -31,7 +31,7 @@
     - name: Assert that the task was executed correctly
       assert:
         that:
-          - result.changed == true
+          - result is changed
           - stage.project_id == project_result.project.id
           - stage.permalink == '{{ stage_permalink }}'
           - stage.name == 'test'
