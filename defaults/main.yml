@@ -1,0 +1,31 @@
+---
+samson_image: 'samson'
+samson_container_name: samson
+samson_dir: '/opt/samson/'
+samson_port: '9080'
+samson_dockerfile_content: '{{ lookup("file", "Dockerfile") }}'
+samson_database_yml_content: '{{ lookup("file", "database.yml") }}'
+samson_database_url: sqlite3:///db/production.sqlite
+samson_plugins: ''
+samson_docker_networks: []
+samson_env:
+  # Mandatory vars
+  DEFAULT_URL: '{{ samson_url }}'
+  GITHUB_CLIENT_ID: '{{ samson_github_oauth_client_id }}'
+  GITHUB_SECRET: '{{ samson_github_oauth_secret }}'
+  GITHUB_TOKEN: '{{ samson_github_token }}'
+  GITHUB_HOOK_SECRET: '{{ samson_github_webhook_secret }}'
+  GITHUB_ORGANIZATION: '{{ samson_github_organization | default(omit) }}'
+  # Default vars
+  PORT: '{{ samson_port }}'
+  RAILS_ENV: 'production'
+  RAILS_MIN_THREADS: '2'
+  RAILS_MAX_THREADS: '10'
+  RAILS_LOG_TO_STDOUT: '1'
+  DATABASE_URL: '{{ samson_database_url }}'
+  DEPLOY_TIMEOUT: '1800'
+  DEPLOY_GROUP_FEATURE: '1'
+  PLUGINS: '{{ samson_plugins }}'
+  BUDDY_CHECK_FEATURE: '1'
+  BUDDY_CHECK_TIME_LIMIT: '20'
+  JOB_STAGGER_INTERVAL: '10'

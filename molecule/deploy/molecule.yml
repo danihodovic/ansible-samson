@@ -1,0 +1,33 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: delegated
+  options:
+    managed: true
+    ansible_connection_options:
+      ansible_connection: local
+platforms:
+  - name: instance
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: ../../.venv/bin/python
+      stdout_callback: yaml
+  inventory:
+    group_vars:
+      all:
+        ansible_connection: local
+        ansible_become: true
+        samson_dir: /tmp/samson-test
+        samson_ssh_key: 'hello'
+        samson_url: http://samson.org
+        samson_github_oauth_client_id: my_client_id
+        samson_github_oauth_secret: my_client_secret
+        samson_github_token: my_token
+        samson_github_webhook_secret: my_webhook_secret
+        samson_github_organization: my_github_org
+verifier:
+  name: testinfra
+  directory: ../../tests
