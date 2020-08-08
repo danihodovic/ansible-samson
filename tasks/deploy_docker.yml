@@ -12,7 +12,7 @@
 
 - name: Create directory
   file:
-    path: '{{ samson_dir }}'
+    path: '{{ samson_dir }}/ssh'
     state: directory
 
 - name: Copy ssh key to clone private repositories
@@ -20,7 +20,7 @@
   no_log: true
   copy:
     content: '{{ samson_ssh_key }}'
-    dest: '{{ samson_dir }}/samson_rsa'
+    dest: '{{ samson_dir }}/ssh/id_rsa'
     mode: 0400
 
 - name: Copy files
@@ -49,7 +49,7 @@
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - '{{ samson_dir }}/db:/db/'
-      - '{{ samson_dir }}/deploy_rsa:/root/.ssh/id_rsa:ro'
+      - '{{ samson_dir }}/ssh/:/root/.ssh/:ro'
     env: '{{ samson_env }}'
     ports:
       - '{{ samson_port }}:{{ samson_port }}'
