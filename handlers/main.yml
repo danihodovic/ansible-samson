@@ -1,0 +1,18 @@
+---
+- name: Restart samson
+  listen: restart_samson
+  notify: health_check_samson
+  docker_container:
+    name: '{{ samson_container_name }}'
+    restart: true
+
+- name: Health check
+  listen: health_check_samson
+  uri:
+    url: 'http://localhost:{{ samson_port }}/ping'
+  # Samson takes some time to bootstrap the db on initial run and we need to
+  # retry in that case.
+  retries: 10
+  delay: 3
+  register: samson_health_check
+  until: samson_health_check.status == 200

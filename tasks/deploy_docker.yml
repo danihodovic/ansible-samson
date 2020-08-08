@@ -1,0 +1,55 @@
+---
+- name: Assert that we have a deploy key
+  assert:
+    that:
+      - samson_ssh_key is defined
+      - samson_url is defined
+      - samson_github_oauth_client_id is defined
+      - samson_github_oauth_secret is defined
+      - samson_github_token is defined
+      - samson_github_webhook_secret is defined
+      - samson_url.startswith("http")
+
+- name: Create directory
+  file:
+    path: '{{ samson_dir }}'
+    state: directory
+
+- name: Copy ssh key to clone private repositories
+  notify: restart_samson
+  no_log: true
+  copy:
+    content: '{{ samson_ssh_key }}'
+    dest: '{{ samson_dir }}/samson_rsa'
+    mode: 0400
+
+- name: Copy files
+  copy:
+    content: '{{ samson_dockerfile_content }}'
+    dest: '{{ samson_dir }}/Dockerfile'
+
+- name: Build Samson image
+  docker_image:
+    build:
+      pull: true
+      path: '{{ samson_dir }}'
+    source: build
+    force_source: true
+    name: '{{ samson_image }}'
+
+- name: Start Samson
+  notify: health_check_samson
+  no_log: '{{ no_log | default(true) }}'
+  docker_container:
+    name: samson
+    image: '{{ samson_image }}'
+    state: started
+    restart_policy: unless-stopped
+    networks: '{{ samson_docker_networks }}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - '{{ samson_dir }}/db:/db/'
+      - '{{ samson_dir }}/deploy_rsa:/root/.ssh/id_rsa:ro'
+    env: '{{ samson_env }}'
+    ports:
+      - '{{ samson_port }}:{{ samson_port }}'

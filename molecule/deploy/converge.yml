@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: localhost
+  tasks:
+    - name: Deploy
+      include_role:
+        name: ansible-samson
+        tasks_from: deploy_docker.yml
