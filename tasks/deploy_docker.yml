@@ -36,7 +36,6 @@
     name: '{{ samson_image }}'
 
 - name: Start Samson
-  notify: health_check_samson
   no_log: '{{ no_log | default(true) }}'
   docker_container:
     comparisons:
