@@ -1,4 +1,4 @@
-FROM zendesk/samson:v3201
+FROM zendesk/samson:v3260
 
 RUN apt update && apt-get install python3-pip -y
 RUN pip3 install ansible==2.10.5 jmespath docker boto3 botocore
