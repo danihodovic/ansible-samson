@@ -36,7 +36,6 @@
     name: '{{ samson_image }}'
 
 - name: Start Samson
-  notify: health_check_samson
   no_log: '{{ no_log | default(true) }}'
   docker_container:
     comparisons:
@@ -49,7 +48,7 @@
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - '{{ samson_dir }}/db:/db/'
-      - '{{ samson_dir }}/ssh/:/root/.ssh/:ro'
+      - '{{ samson_dir }}/ssh/:/root/.ssh/'
     env: '{{ samson_env }}'
 
 - name: Wait for Samson to start
