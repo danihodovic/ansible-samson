@@ -19,3 +19,17 @@ samson_env_defaults:
   BUDDY_CHECK_FEATURE: '1'
   BUDDY_CHECK_TIME_LIMIT: '20'
   JOB_STAGGER_INTERVAL: '10'
+samson_container: {}
+samson_container_defaults:
+  comparisons:
+    '*': strict
+  name: samson
+  image: '{{ samson_image }}'
+  state: started
+  restart_policy: unless-stopped
+  network_mode: host
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - '{{ samson_dir }}/db:/db/'
+    - '{{ samson_dir }}/ssh/:/root/.ssh/'
+  env: '{{ samson_env }}'
