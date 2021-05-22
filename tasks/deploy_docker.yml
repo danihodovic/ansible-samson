@@ -35,21 +35,12 @@
     force_source: true
     name: '{{ samson_image }}'
 
+- set_fact:
+    samson_container: '{{ samson_container_defaults | combine(samson_container) }}'
+
 - name: Start Samson
   no_log: '{{ no_log | default(true) }}'
-  docker_container:
-    comparisons:
-      '*': strict
-    name: samson
-    image: '{{ samson_image }}'
-    state: started
-    restart_policy: unless-stopped
-    networks: '{{ samson_docker_networks }}'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - '{{ samson_dir }}/db:/db/'
-      - '{{ samson_dir }}/ssh/:/root/.ssh/'
-    env: '{{ samson_env }}'
+  docker_container: '{{ samson_container }}'
 
 - name: Wait for Samson to start
   register: health_check_result
