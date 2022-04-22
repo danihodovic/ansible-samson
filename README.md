@@ -1,4 +1,5 @@
-# Ansible modules for Samson
+<img src="https://github.com/janabuco/ansible-samson/blob/master/logo.png?raw=true">
+<h1 align="center">Ansible modules for Samson</h1>
 
 ![Build Status](https://travis-ci.org/danihodovic/ansible-samson.svg?branch=master)
 
